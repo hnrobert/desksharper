@@ -1,0 +1,108 @@
+name: Build and Test
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main]
+    release:
+        types: [created]
+
+jobs:
+    build:
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest]
+                dotnet-version: ["9.0.x"]
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ matrix.dotnet-version }}
+
+            - name: Restore dependencies
+              run: dotnet restore src/DeskSharper/DeskSharper.csproj
+
+            - name: Build
+              run: dotnet build src/DeskSharper/DeskSharper.csproj --configuration Release --no-restore
+
+            - name: Test
+              run: dotnet test src/DeskSharper/DeskSharper.csproj --configuration Release --no-build --verbosity normal
+
+            - name: Publish (Linux AOT)
+              if: matrix.os == 'ubuntu-latest'
+              run: |
+                  dotnet publish src/DeskSharper/DeskSharper.csproj \
+                    -c Release \
+                    -r linux-x64 \
+                    --self-contained \
+                    -p:PublishAot=true \
+                    -o ./publish/linux-x64
+
+            - name: Publish (Windows AOT)
+              if: matrix.os == 'windows-latest'
+              run: |
+                  dotnet publish src/DeskSharper/DeskSharper.csproj `
+                    -c Release `
+                    -r win-x64 `
+                    --self-contained `
+                    -p:PublishAot=true `
+                    -o ./publish/win-x64
+
+            - name: Publish (macOS AOT)
+              if: matrix.os == 'macos-latest'
+              run: |
+                  dotnet publish src/DeskSharper/DeskSharper.csproj \
+                    -c Release \
+                    -r osx-x64 \
+                    --self-contained \
+                    -p:PublishAot=true \
+                    -o ./publish/osx-x64
+
+            - name: Upload Linux Artifact
+              if: matrix.os == 'ubuntu-latest'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: DeskSharper-Linux-x64
+                  path: ./publish/linux-x64/*
+
+            - name: Upload Windows Artifact
+              if: matrix.os == 'windows-latest'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: DeskSharper-Windows-x64
+                  path: ./publish/win-x64/*
+
+            - name: Upload macOS Artifact
+              if: matrix.os == 'macos-latest'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: DeskSharper-macOS-x64
+                  path: ./publish/osx-x64/*
+
+            - name: Create Release Archives
+              if: github.event_name == 'release'
+              shell: bash
+              run: |
+                  if [ "$RUNNER_OS" == "Linux" ]; then
+                    tar -czf DeskSharper-Linux-x64.tar.gz -C ./publish/linux-x64 .
+                  elif [ "$RUNNER_OS" == "Windows" ]; then
+                    7z a DeskSharper-Windows-x64.zip ./publish/win-x64/*
+                    elif [ "$RUNNER_OS" == "macOS" ]; then
+                    zip -r DeskSharper-macOS-x64.zip ./publish/osx-x64/*
+                  fi
+
+            - name: Upload Release Assets
+              if: github.event_name == 'release'
+              uses: softprops/action-gh-release@v1
+              with:
+                  files: |
+                      DeskSharper-*.tar.gz
+                      DeskSharper-*.zip
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

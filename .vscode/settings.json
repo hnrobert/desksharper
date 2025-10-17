@@ -1,0 +1,16 @@
+{
+    "markdownlint.config": {
+        "no-inline-html": false
+    },
+    "cSpell.words": [
+        "Avalonia",
+        "Color",
+        "desksharper",
+        "elif",
+        "Movefile",
+        "MVVM",
+        "osascript",
+        "Serilog",
+        "softprops"
+    ]
+}

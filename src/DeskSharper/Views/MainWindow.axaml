@@ -1,0 +1,225 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DeskSharper.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+        x:Class="DeskSharper.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="DeskSharper - Desktop Cleaner"
+        Width="900" Height="650"
+        MinWidth="700" MinHeight="500">
+
+    <Design.DataContext>
+        <vm:MainViewModel/>
+    </Design.DataContext>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="🧹 DeskSharper - Desktop Cleaner" 
+                      FontSize="24" 
+                      FontWeight="Bold"
+                      Margin="0,0,0,10"/>
+            <TextBlock Text="Organize your desktop automatically" 
+                      FontSize="14" 
+                      Opacity="0.7"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="15">
+                
+                <!-- Configuration Selection -->
+                <Border BorderBrush="{DynamicResource SystemAccentColor}" 
+                       BorderThickness="2" 
+                       CornerRadius="8" 
+                       Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Configuration" FontSize="16" FontWeight="SemiBold"/>
+                        
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                            <ComboBox Grid.Column="0"
+                                    ItemsSource="{Binding ConfigNames}"
+                                    SelectedItem="{Binding SelectedConfigName}"
+                                    PlaceholderText="Select a configuration..."
+                                    Margin="0,0,10,0"/>
+                            <Button Grid.Column="1" 
+                                   Content="Load" 
+                                   Command="{Binding LoadConfigCommand}"
+                                   Margin="0,0,10,0"
+                                   Padding="15,8"/>
+                            <Button Grid.Column="2" 
+                                   Content="Delete" 
+                                   Command="{Binding DeleteConfigCommand}"
+                                   Margin="0,0,10,0"
+                                   Padding="15,8"/>
+                            <Button Grid.Column="3" 
+                                   Content="New" 
+                                   Command="{Binding NewConfigCommand}"
+                                   Padding="15,8"/>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock Grid.Column="0" Text="Config Name:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBox Grid.Column="1" 
+                                    Text="{Binding ConfigName}" 
+                                    Watermark="Enter configuration name..."
+                                    Margin="0,0,10,0"/>
+                            <Button Grid.Column="2" 
+                                   Content="💾 Save Config" 
+                                   Command="{Binding SaveConfigCommand}"
+                                   Padding="15,8"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Paths -->
+                <Border BorderBrush="#40808080" BorderThickness="1" CornerRadius="8" Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Paths" FontSize="16" FontWeight="SemiBold"/>
+                        
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock Grid.Column="0" Text="Source Path:" VerticalAlignment="Center" Margin="0,0,10,0" Width="110"/>
+                            <TextBox Grid.Column="1" 
+                                    Text="{Binding SourcePath}" 
+                                    Margin="0,0,10,0"
+                                    IsReadOnly="True"/>
+                            <Button Grid.Column="2" 
+                                   Content="Browse..." 
+                                   Command="{Binding BrowseSourcePathCommand}"
+                                   Padding="15,8"/>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock Grid.Column="0" Text="Destination:" VerticalAlignment="Center" Margin="0,0,10,0" Width="110"/>
+                            <TextBox Grid.Column="1" 
+                                    Text="{Binding DestinationPath}" 
+                                    Watermark="Leave empty to delete items..."
+                                    Margin="0,0,10,0"
+                                    IsReadOnly="True"/>
+                            <Button Grid.Column="2" 
+                                   Content="Browse..." 
+                                   Command="{Binding BrowseDestinationPathCommand}"
+                                   Padding="15,8"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Move Options -->
+                <Border BorderBrush="#40808080" BorderThickness="1" CornerRadius="8" Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Move Options" FontSize="16" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" Spacing="20">
+                            <CheckBox Content="Move Folders" IsChecked="{Binding MoveFolders}"/>
+                            <CheckBox Content="Move Shortcuts" IsChecked="{Binding MoveShortcuts}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Advanced Options -->
+                <Expander Header="Advanced Options" IsExpanded="False">
+                    <Border BorderBrush="#40808080" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,5,0,0">
+                        <StackPanel Spacing="15">
+                            
+                            <!-- Keep Files -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Keep Files (comma-separated):" FontWeight="SemiBold"/>
+                                <TextBox Text="{Binding KeepFilesText}" 
+                                        Watermark="e.g., important.txt, config.ini"
+                                        TextWrapping="Wrap"
+                                        AcceptsReturn="False"/>
+                            </StackPanel>
+
+                            <!-- Keep Extensions -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Keep Extensions (comma-separated):" FontWeight="SemiBold"/>
+                                <TextBox Text="{Binding KeepExtensionsText}" 
+                                        Watermark="e.g., .txt, .pdf, .docx"
+                                        TextWrapping="Wrap"
+                                        AcceptsReturn="False"/>
+                            </StackPanel>
+
+                            <!-- Retention Time -->
+                            <Grid ColumnDefinitions="Auto,200,*">
+                                <TextBlock Grid.Column="0" Text="Retention Time (hours):" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <NumericUpDown Grid.Column="1" 
+                                             Value="{Binding RetentionHours}" 
+                                             Minimum="0"
+                                             Maximum="8760"
+                                             Increment="1"/>
+                                <TextBlock Grid.Column="2" 
+                                          Text="(0 = process all items)" 
+                                          VerticalAlignment="Center" 
+                                          Opacity="0.7"
+                                          Margin="10,0,0,0"/>
+                            </Grid>
+
+                            <!-- Check Mode -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Time Check Mode:" FontWeight="SemiBold"/>
+                                <ComboBox SelectedIndex="{Binding CheckModeIndex}"
+                                         HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="Last Modified Time"/>
+                                    <ComboBoxItem Content="Last Accessed Time"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Auto Run -->
+                            <CheckBox Content="Run automatically on startup" IsChecked="{Binding AutoRun}"/>
+                        </StackPanel>
+                    </Border>
+                </Expander>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer with Actions and Status -->
+        <Grid Grid.Row="2" Margin="0,20,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Action Buttons -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                <Button Content="👁️ Preview" 
+                       Command="{Binding PreviewCommand}"
+                       IsEnabled="{Binding !IsProcessing}"
+                       Padding="20,10"
+                       FontSize="14"/>
+                <Button Content="▶️ Run Cleaning" 
+                       Command="{Binding RunCommand}"
+                       IsEnabled="{Binding !IsProcessing}"
+                       Padding="20,10"
+                       FontSize="14">
+                    <Button.Classes>accent</Button.Classes>
+                </Button>
+            </StackPanel>
+
+            <!-- Status Bar -->
+            <Border Grid.Row="1" 
+                   Background="#20808080" 
+                   CornerRadius="4" 
+                   Padding="10"
+                   Margin="0,15,0,0"
+                   IsVisible="{Binding HasStatusMessage}">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ProgressBar IsIndeterminate="{Binding IsProcessing}" 
+                               Width="100" 
+                               IsVisible="{Binding IsProcessing}"/>
+                    <TextBlock Text="{Binding StatusMessage}" 
+                             VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+
+</Window>
