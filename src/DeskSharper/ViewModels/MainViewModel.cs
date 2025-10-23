@@ -51,6 +51,26 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty] private string? _selectedConfigName;
 
+    // Preview-related properties
+    [ObservableProperty] private bool _hasPreviewResults;
+
+    [ObservableProperty] private string _previewScanTime = string.Empty;
+
+    [ObservableProperty] private string _previewItemCount = string.Empty;
+
+    [ObservableProperty] private string _previewDestination = string.Empty;
+
+    [ObservableProperty] private string _previewItemList = string.Empty;
+
+    [ObservableProperty] private int _languageIndex;
+
+    public bool HasPreviewOrStatus => HasPreviewResults || !string.IsNullOrEmpty(StatusMessage) || IsProcessing;
+
+    // Parameterless constructor for AOT/trimming and designer support
+    public MainViewModel() : this(null!, null!, null!)
+    {
+    }
+
     public MainViewModel(
         ConfigService configService,
         CleaningService cleaningService,
@@ -60,6 +80,7 @@ public partial class MainViewModel : ViewModelBase
         _cleaningService = cleaningService;
         _notificationService = notificationService;
 
+        // Only initialize if services are provided (not in designer mode)
         _ = LoadConfigNamesAsync();
 
         // Update HasStatusMessage when StatusMessage changes
@@ -68,6 +89,17 @@ public partial class MainViewModel : ViewModelBase
             if (e.PropertyName == nameof(StatusMessage))
             {
                 OnPropertyChanged(nameof(HasStatusMessage));
+                OnPropertyChanged(nameof(HasPreviewOrStatus));
+            }
+
+            if (e.PropertyName == nameof(HasPreviewResults))
+            {
+                OnPropertyChanged(nameof(HasPreviewOrStatus));
+            }
+
+            if (e.PropertyName == nameof(IsProcessing))
+            {
+                OnPropertyChanged(nameof(HasPreviewOrStatus));
             }
 
             if (e.PropertyName == nameof(CheckModeIndex))
@@ -119,36 +151,55 @@ public partial class MainViewModel : ViewModelBase
 
         IsProcessing = true;
         StatusMessage = Strings.Get("Scanning");
+        HasPreviewResults = false;
 
         try
         {
+            var startTime = DateTime.Now;
             var config = CreateConfigFromCurrentSettings();
             var tasks = await _cleaningService.ScanDirectoryAsync(
                 config,
                 new Progress<string>(msg => StatusMessage = msg));
 
+            var scanDuration = DateTime.Now - startTime;
+
+            // Update preview properties
+            PreviewScanTime = $"{scanDuration.TotalSeconds:F2}s";
+            PreviewItemCount = tasks.Count.ToString();
+            PreviewDestination = string.IsNullOrWhiteSpace(DestinationPath)
+                ? "删除 / Delete"
+                : DestinationPath;
+
             if (tasks.Count == 0)
             {
-                await ShowMessageAsync(
-                    Strings.Get("NoItemsToProcess"),
-                    Strings.Get("NoItemsFound"));
+                PreviewItemList = "无 / None";
             }
             else
             {
-                var itemList = string.Join("\n", tasks.Select(t => $"• {t.Name}"));
-                await ShowMessageAsync(
-                    Strings.Get("PreviewTitle"),
-                    $"{Strings.Get("ItemCount", tasks.Count)}\n\n{itemList}");
+                var items = tasks.Select(t => $"• {t.Name}").ToList();
+                if (items.Count > 50)
+                {
+                    var displayItems = items.Take(50).ToList();
+                    displayItems.Add($"... 以及其他 {items.Count - 50} 个项目 / and {items.Count - 50} more items");
+                    PreviewItemList = string.Join("\n", displayItems);
+                }
+                else
+                {
+                    PreviewItemList = string.Join("\n", items);
+                }
             }
+
+            HasPreviewResults = true;
+            StatusMessage = string.Empty;
         }
         catch (Exception ex)
         {
             await ShowMessageAsync("Error", ex.Message);
+            HasPreviewResults = false;
         }
         finally
         {
             IsProcessing = false;
-            StatusMessage = string.Empty;
         }
     }
 
@@ -168,6 +219,7 @@ public partial class MainViewModel : ViewModelBase
         }
 
         IsProcessing = true;
+        HasPreviewResults = false; // Clear preview when running
 
         try
         {
